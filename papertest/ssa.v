@@ -1,6 +1,7 @@
 module SystolicArray(
   input [63:0] a0, a1, a2, a3,
   input [63:0] b0, b1, b2, b3,
+  input [3:0] control,
   output [63:0] y00, y01, y02, y03,
   output [63:0] y10, y11, y12, y13,
   output [63:0] y20, y21, y22, y23,
@@ -12,6 +13,7 @@ module SystolicArray(
   wire [63:0] a_out_reg[3:0][3:0];
   wire [63:0] b_out_reg[3:0][3:0];
   wire [63:0] y_reg[3:0][3:0];
+  wire [3:0] control_reg[3:0][3:0];
 
   // Generator for PEs
   genvar x, y;
@@ -22,7 +24,7 @@ module SystolicArray(
           .a(a_reg[x]),
           .b(b_reg[y]),
           .p(p_reg[y]),
-          .control(4'b0000),
+          .control(control_reg[x][y]),
           .y(y_reg[x][y]),
           .a_out(a_out_reg[x][y]),
           .b_out(b_out_reg[x][y])
@@ -41,6 +43,11 @@ module SystolicArray(
     b_reg[1] = b1;
     b_reg[2] = b2;
     b_reg[3] = b3;
+    for (x = 0; x < 4; x = x + 1) begin
+      for (y = 0; y < 4; y = y + 1) begin
+        control_reg[x][y] = control;
+      end
+    end
   end
 
   // Data flow and registers for PEs
@@ -51,10 +58,12 @@ module SystolicArray(
         a_out_reg[x][y] = a_out_reg[x][y-1];
         b_out_reg[x][y] = b_out_reg[x-1][y];
         y_reg[x][y] = y_reg[x-1][y];
+        control_reg[x][y] = control_reg[x-1][y];
       end
       a_out_reg[x][0] = a_reg[x];
       b_out_reg[x][0] = b_reg[0];
       y_reg[x][0] = 0; // Placeholder value for p_in of PE(0, 0)
+      control_reg[x][0] = control;
     end
   end
 
